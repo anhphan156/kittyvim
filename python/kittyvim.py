@@ -7,7 +7,14 @@ sockets = []
 socket_name_prefix = 'vimkitty'
 
 def spawn_terminal(options):
-    socket_name = '{}-{}'.format(socket_name_prefix, len(sockets))
+    num_sockets = len(sockets)
+    socket_name = '{}-{}'.format(socket_name_prefix, num_sockets)
+
+    another_num_sockets = 0 # to fix naming collision
+
+    while(os.path.exists('/tmp/' + socket_name)):
+        another_num_sockets += 1
+        socket_name = socket_name_prefix + '-' + str(num_sockets) + '-' + str(another_num_sockets)
 
     # Create socket
     cmd = 'kitty -o {} -o allow_remote_control=yes --listen-on unix:/tmp/{}&'.format(options, socket_name, socket_name)
@@ -22,11 +29,15 @@ def kill_terminal(sockets, socket_index):
     socket_name = sockets[int(socket_index)]
 
     path = '/tmp/{}'.format(socket_name)
+
+    sockets.pop(int(socket_index))
+
     if os.path.exists(path):
         socket_pid = get_terminal_PID(socket_name)
 
         os.system('kill -9 {}'.format(socket_pid))
-        sockets.pop(int(socket_index))
+    else:
+        kill_terminal(sockets, socket_index)
 
 def kill_all_terminal(sockets):
     for i in range(len(sockets)):
@@ -41,7 +52,13 @@ def get_terminal_PID(socket_name):
 
     return pid
 
-def send_text(socket_name, text):
+def send_text(sockets, socket_name, text):
+    if len(sockets) == 0:
+        print('No active terminal')
     path = '/tmp/{}'.format(socket_name)
     if os.path.exists(path):
         p = subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'send-text', '{}\n'.format(text)])
+    else:
+        sockets = [x for x in sockets if x != socket_name]
+        socket_name = sockets[0]
+        send_text(sockets, socket_name, text)
