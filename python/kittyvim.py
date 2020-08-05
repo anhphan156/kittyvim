@@ -42,6 +42,6 @@ def get_terminal_PID(socket_name):
     return pid
 
 def send_text(socket_name, text):
-    path = 'unix:/tmp/{}'.format(socket_name)
+    path = '/tmp/{}'.format(socket_name)
     if os.path.exists(path):
-        p = subprocess.Popen(['kitty', '@', '--to', path, 'send-text', '{}\n'.format(text)])
+        p = subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'send-text', '{}\n'.format(text)])
