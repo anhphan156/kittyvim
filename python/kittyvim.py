@@ -17,7 +17,7 @@ def spawn_terminal(options):
         socket_name = socket_name_prefix + '-' + str(num_sockets) + '-' + str(another_num_sockets)
 
     # Create socket
-    cmd = 'kitty -o {} -o allow_remote_control=yes --listen-on unix:/tmp/{}&'.format(options, socket_name, socket_name)
+    cmd = 'kitty -o {} -o allow_remote_control=yes --listen-on unix:/tmp/{}&'.format(options, socket_name)
     os.system(cmd)
 
     sockets.append(socket_name)
@@ -26,18 +26,20 @@ def kill_terminal(sockets, socket_index):
     if(len(sockets) == 0):
         return 0
 
-    socket_name = sockets[int(socket_index)]
+    socket_index = int(socket_index)
+
+    socket_name = sockets[socket_index]
 
     path = '/tmp/{}'.format(socket_name)
 
-    sockets.pop(int(socket_index))
+    sockets.pop(socket_index)
 
     if os.path.exists(path):
         socket_pid = get_terminal_PID(socket_name)
 
-        os.system('kill -9 {}'.format(socket_pid))
+        os.system('kill -9 ' + str(socket_pid))
     else:
-        kill_terminal(sockets, socket_index)
+        kill_terminal(sockets, 0 if (socket_index - 1) < 0 else (socket_index - 1))
 
 def kill_all_terminal(sockets):
     for i in range(len(sockets)):
@@ -55,10 +57,11 @@ def get_terminal_PID(socket_name):
 def send_text(sockets, socket_name, text):
     if len(sockets) == 0:
         print('No active terminal')
-    path = '/tmp/{}'.format(socket_name)
+    path = '/tmp/' + socket_name
     if os.path.exists(path):
-        p = subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'send-text', '{}\n'.format(text)])
+        p = subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'send-text', text + '\n'])
     else:
         sockets = [x for x in sockets if x != socket_name]
-        socket_name = sockets[0]
-        send_text(sockets, socket_name, text)
+        if len(sockets) > 0:
+            socket_name = sockets[0]
+            send_text(sockets, socket_name, text)
