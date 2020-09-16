@@ -59,7 +59,8 @@ def send_text(sockets, socket_name, text):
         print('No active terminal')
     path = '/tmp/' + socket_name
     if os.path.exists(path):
-        p = subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'send-text', text + '\n'])
+        subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'send-text', text + '\n'])
+        subprocess.Popen(['kitty', '@', '--to', 'unix:' + path, 'scroll-window', '9999'])
     else:
         sockets = [x for x in sockets if x != socket_name]
         if len(sockets) > 0:
